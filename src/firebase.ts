@@ -9,12 +9,12 @@ const isConfigured =
   import.meta.env.VITE_FIREBASE_API_KEY !== "";
 
 const firebaseConfig = {
-  apiKey: isConfigured ? import.meta.env.VITE_FIREBASE_API_KEY : "AIzaSyD5JdNZbxwohMFTacl539udkGNPeO1NQk0",
-  authDomain: (isConfigured && import.meta.env.VITE_FIREBASE_AUTH_DOMAIN) ? import.meta.env.VITE_FIREBASE_AUTH_DOMAIN : "gen-lang-client-0984681318.firebaseapp.com",
-  projectId: (isConfigured && import.meta.env.VITE_FIREBASE_PROJECT_ID) ? import.meta.env.VITE_FIREBASE_PROJECT_ID : "gen-lang-client-0984681318",
-  storageBucket: (isConfigured && import.meta.env.VITE_FIREBASE_STORAGE_BUCKET) ? import.meta.env.VITE_FIREBASE_STORAGE_BUCKET : "gen-lang-client-0984681318.firebasestorage.app",
-  messagingSenderId: (isConfigured && import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID) ? import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID : "900272662402",
-  appId: (isConfigured && import.meta.env.VITE_FIREBASE_APP_ID) ? import.meta.env.VITE_FIREBASE_APP_ID : "1:900272662402:web:ff470028f40d09554cd19b",
+  apiKey: isConfigured ? import.meta.env.VITE_FIREBASE_API_KEY : "AIzaSy_MOCK_KEY_FOR_LOCAL_OFFLINE_MODE",
+  authDomain: (isConfigured && import.meta.env.VITE_FIREBASE_AUTH_DOMAIN) ? import.meta.env.VITE_FIREBASE_AUTH_DOMAIN : "socialtalk-local-fallback.firebaseapp.com",
+  projectId: (isConfigured && import.meta.env.VITE_FIREBASE_PROJECT_ID) ? import.meta.env.VITE_FIREBASE_PROJECT_ID : "socialtalk-local-fallback",
+  storageBucket: (isConfigured && import.meta.env.VITE_FIREBASE_STORAGE_BUCKET) ? import.meta.env.VITE_FIREBASE_STORAGE_BUCKET : "socialtalk-local-fallback.appspot.com",
+  messagingSenderId: (isConfigured && import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID) ? import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID : "000000000000",
+  appId: (isConfigured && import.meta.env.VITE_FIREBASE_APP_ID) ? import.meta.env.VITE_FIREBASE_APP_ID : "1:000000000000:web:00000000000000000",
 };
 
 let app: any;
@@ -32,7 +32,7 @@ try {
 } catch (e) {
   console.warn("Firebase initialization failed with current config. Setting up dummy fallback app:", e);
   const fallbackConfig = {
-    apiKey: "AIzaSyDummyKeyForOfflineFallbackMode12",
+    apiKey: "AIzaSy_MOCK_KEY_FOR_LOCAL_OFFLINE_MODE",
     authDomain: "localhost",
     projectId: "socialtalk-dummy",
   };
