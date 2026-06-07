@@ -82,18 +82,69 @@ export default function App() {
               clearedStages: allStageIds
             }).catch(e => console.error("Failed to auto-unlock admin stages", e));
           } else {
+            // Load saved local profile to compare progress
+            const savedRaw = localStorage.getItem(`socialtalk_profile_${name}`);
+            let savedLocalProfile: UserProfile | null = null;
+            if (savedRaw) {
+              try {
+                savedLocalProfile = JSON.parse(savedRaw);
+              } catch (_) {}
+            }
+
+            // We merge the unlocked/cleared stages, choosing whichever has MORE progress!
+            const cloudUnlocked = data.unlockedStages || [];
+            const localUnlocked = savedLocalProfile?.unlockedStages || [];
+            const mergedUnlocked = Array.from(new Set(['stage-1', ...cloudUnlocked, ...localUnlocked]));
+
+            const cloudCleared = data.clearedStages || [];
+            const localCleared = savedLocalProfile?.clearedStages || [];
+            const mergedCleared = Array.from(new Set([...cloudCleared, ...localCleared]));
+
+            // Ensure we choose the maximum XP / wisdom/ level as well
+            const maxExp = Math.max(data.exp || 0, savedLocalProfile?.exp || 0);
+            const maxWisdom = Math.max(data.wisdom || 0, savedLocalProfile?.wisdom || 0);
+            const maxLevel = Math.max(data.level || 1, savedLocalProfile?.level || 1);
+            const maxCompetence = Math.max(data.competenceIndex || 0, savedLocalProfile?.competenceIndex || 0);
+
+            // Merge of badges and clearedWorlds
+            const mergedBadges = Array.from(new Set([...(data.badges || []), ...(savedLocalProfile?.badges || [])]));
+            const mergedClearedWorlds = Array.from(new Set([...(data.clearedWorlds || []), ...(savedLocalProfile?.clearedWorlds || [])]));
+
             finalProfile = {
               ...defaultProfile,
               ...data,
-              unlockedStages: data.unlockedStages || defaultProfile.unlockedStages,
-              clearedStages: data.clearedStages || defaultProfile.clearedStages,
-              inventory: { ...defaultProfile.inventory, ...(data.inventory || {}) }
+              exp: maxExp,
+              wisdom: maxWisdom,
+              level: maxLevel,
+              competenceIndex: maxCompetence,
+              unlockedStages: mergedUnlocked,
+              clearedStages: mergedCleared,
+              badges: mergedBadges,
+              clearedWorlds: mergedClearedWorlds,
+              inventory: { 
+                magnifier: Math.max(data.inventory?.magnifier || 0, savedLocalProfile?.inventory?.magnifier || 0),
+                mirror: Math.max(data.inventory?.mirror || 0, savedLocalProfile?.inventory?.mirror || 0),
+                hourglass: Math.max(data.inventory?.hourglass || 0, savedLocalProfile?.inventory?.hourglass || 0),
+                advice: Math.max(data.inventory?.advice || 0, savedLocalProfile?.inventory?.advice || 0),
+              }
             };
           }
         } else {
-          // For new users, we don't wait for setDoc to complete to speed up entry
-          setDoc(docRef, defaultProfile).catch(e => console.error("Failed to create new user profile", e));
-          finalProfile = defaultProfile;
+          // New user setup - double check if there's any existing local data first
+          const savedRaw = localStorage.getItem(`socialtalk_profile_${name}`);
+          if (savedRaw) {
+            try {
+              finalProfile = JSON.parse(savedRaw);
+              // Save to Firestore to sync
+              setDoc(docRef, finalProfile).catch(e => console.error("Failed to sync offline user profile to database", e));
+            } catch (_) {
+              setDoc(docRef, defaultProfile).catch(e => console.error("Failed to create new user profile", e));
+              finalProfile = defaultProfile;
+            }
+          } else {
+            setDoc(docRef, defaultProfile).catch(e => console.error("Failed to create new user profile", e));
+            finalProfile = defaultProfile;
+          }
         }
         
         if (isAdmin) {
@@ -193,20 +244,54 @@ export default function App() {
       const unsubscribe = onSnapshot(doc(db, 'users', nickname), (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as UserProfile;
-          const isAdmin = data.role === 'admin';
-          const allStageIds = scenarios.map(s => s.id);
           
           setProfile(prev => {
             if (!prev) return data;
+            
+            // Merge arrays to take union of unlocked and cleared stages (avoiding downgrades if local is newer)
+            const mergedUnlocked = Array.from(new Set([
+              'stage-1',
+              ...(data.unlockedStages || []),
+              ...(prev.unlockedStages || [])
+            ]));
+            
+            const mergedCleared = Array.from(new Set([
+              ...(data.clearedStages || []),
+              ...(prev.clearedStages || [])
+            ]));
+
+            const mergedBadges = Array.from(new Set([
+              ...(data.badges || []),
+              ...(prev.badges || [])
+            ]));
+
+            const mergedClearedWorlds = Array.from(new Set([
+              ...(data.clearedWorlds || []),
+              ...(prev.clearedWorlds || [])
+            ]));
+
             return {
               ...prev,
               ...data,
-              unlockedStages: data.unlockedStages || prev.unlockedStages,
-              clearedStages: data.clearedStages || prev.clearedStages,
-              inventory: { ...prev.inventory, ...(data.inventory || {}) }
+              unlockedStages: mergedUnlocked,
+              clearedStages: mergedCleared,
+              badges: mergedBadges,
+              clearedWorlds: mergedClearedWorlds,
+              exp: Math.max(data.exp || 0, prev.exp || 0),
+              level: Math.max(data.level || 1, prev.level || 1),
+              wisdom: Math.max(data.wisdom || 0, prev.wisdom || 0),
+              competenceIndex: Math.max(data.competenceIndex || 0, prev.competenceIndex || 0),
+              inventory: {
+                magnifier: Math.max(data.inventory?.magnifier || 0, prev.inventory?.magnifier || 0),
+                mirror: Math.max(data.inventory?.mirror || 0, prev.inventory?.mirror || 0),
+                hourglass: Math.max(data.inventory?.hourglass || 0, prev.inventory?.hourglass || 0),
+                advice: Math.max(data.inventory?.advice || 0, prev.inventory?.advice || 0),
+              }
             };
           });
         }
+      }, (error) => {
+        console.warn("Firestore snapshot listen for profile failed (running with offline data fallback):", error);
       });
       return unsubscribe;
     }
@@ -417,6 +502,16 @@ export default function App() {
     }
   };
 
+  const updateProfileState = (updater: UserProfile | ((prev: UserProfile | null) => UserProfile | null)) => {
+    setProfile(prev => {
+      const nextProfile = typeof updater === 'function' ? updater(prev) : updater;
+      if (nextProfile && nextProfile.uid) {
+        localStorage.setItem(`socialtalk_profile_${nextProfile.uid}`, JSON.stringify(nextProfile));
+      }
+      return nextProfile;
+    });
+  };
+
   return (
     <ErrorBoundary>
       <div className="h-[100dvh] flex flex-col bg-[#050505] overflow-hidden text-slate-200">
@@ -497,7 +592,7 @@ export default function App() {
           )}
           {view === 'chat' && (
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="h-full">
-              <Chatbot scenario={selectedScenario} onBack={() => handleNavClick('map')} onNextStage={handleNextStage} profile={profile} scenarios={scenarios} />
+              <Chatbot scenario={selectedScenario} onBack={() => handleNavClick('map')} onNextStage={handleNextStage} profile={profile} scenarios={scenarios} onUpdateProfile={updateProfileState} />
             </motion.div>
           )}
           {view === 'dashboard' && (

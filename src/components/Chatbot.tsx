@@ -13,11 +13,12 @@ interface ChatbotProps {
   onNextStage: (nextScenarioId: string) => void;
   profile: UserProfile | null;
   scenarios: Scenario[];
+  onUpdateProfile?: (profile: UserProfile) => void;
 }
 
 type Step = 'visual' | 'quest' | 'result';
 
-export default function Chatbot({ scenario, onBack, onNextStage, profile, scenarios }: ChatbotProps) {
+export default function Chatbot({ scenario, onBack, onNextStage, profile, scenarios, onUpdateProfile }: ChatbotProps) {
   const [currentStep, setCurrentStep] = useState<Step>('visual');
   const [currentQuestIndex, setCurrentQuestIndex] = useState(0);
   const [input, setInput] = useState('');
@@ -263,7 +264,12 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
           localStorage.setItem(`socialtalk_profile_${profile.uid}`, JSON.stringify(updatedProfile));
         }
 
-        // 2. Synchronize to Firestore remote database if connected
+        // 2. Immediately update the parent React state so UI updates in real-time
+        if (onUpdateProfile) {
+          onUpdateProfile(updatedProfile);
+        }
+
+        // 3. Synchronize to Firestore remote database if connected
         if (dbConnected) {
           try {
             const userRef = doc(db, 'users', profile?.uid || '');
