@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores student progress and stats (identified by nickname)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User nickname" },
+        "displayName": { "type": "string", "description": "User nickname" },
+        "email": { "type": "string" },
+        "exp": { "type": "integer" },
+        "level": { "type": "integer" },
+        "wisdom": { "type": "integer" },
+        "competenceIndex": { "type": "number" },
+        "schoolpingCompleted": { "type": "boolean" },
+        "badges": { "type": "array", "items": { "type": "string" } },
+        "clearedWorlds": { "type": "array", "items": { "type": "string" } },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "cognitive": { "type": "number" },
+            "emotional": { "type": "number" },
+            "behavioral": { "type": "number" }
+          }
+        }
+      },
+      "required": ["uid", "exp", "level"]
+    },
+    "Scenario": {
+      "title": "Learning Scenario",
+      "description": "A specific social situation for learning",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "world": { "type": "string", "enum": ["forest", "sea", "city", "castle"] },
+        "stage": { "type": "integer" },
+        "isBoss": { "type": "boolean" },
+        "title": { "type": "string" },
+        "situation": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] }
+      },
+      "required": ["id", "world", "stage", "title"]
+    },
+    "Attempt": {
+      "title": "User Attempt",
+      "description": "Records of user interaction with a scenario",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "scenarioId": { "type": "string" },
+        "userInput": { "type": "string" },
+        "aiFeedback": { "type": "string" },
+        "scores": {
+          "type": "object",
+          "properties": {
+            "clarity": { "type": "number" },
+            "sincerity": { "type": "number" }
+          }
+        },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "scenarioId", "userInput", "timestamp"]
+    },
+    "SchoolpingMission": {
+      "title": "Schoolping Mission",
+      "description": "Team-based social missions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "submissions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uid": { "type": "string" },
+              "userName": { "type": "string" },
+              "imageUrl": { "type": "string" },
+              "text": { "type": "string" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "scenarios": {
+      "schema": "Scenario",
+      "description": "Collection of learning scenarios"
+    },
+    "attempts": {
+      "schema": "Attempt",
+      "description": "Collection of user attempts"
+    },
+    "schoolping": {
+      "schema": "SchoolpingMission",
+      "description": "Collection of team missions"
+    }
+  }
+}

@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-cyber-blue: #00F2FF;
+  --color-cyber-purple: #7000FF;
+  --color-cyber-bg: #050505;
+  --color-cyber-card: rgba(15, 15, 25, 0.7);
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-cyber-bg text-white overflow-x-hidden;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  .cyber-card {
+    @apply bg-cyber-card backdrop-blur-[10px] rounded-2xl border border-cyber-blue/30 shadow-[0_0_20px_rgba(0,242,255,0.1)] transition-all duration-300;
+  }
+  .cyber-card:hover {
+    @apply border-cyber-blue/60 shadow-[0_0_30px_rgba(0,242,255,0.2)];
+  }
+  
+  .cyber-button {
+    @apply px-6 py-3 rounded-xl font-bold transition-all duration-200 active:scale-90 shadow-lg flex items-center justify-center gap-2;
+  }
+  .cyber-button-primary {
+    @apply bg-cyber-blue text-black hover:bg-white hover:shadow-[0_0_20px_#00F2FF];
+  }
+  .cyber-button-secondary {
+    @apply bg-cyber-purple text-white hover:opacity-80 hover:shadow-[0_0_20px_#7000FF];
+  }
+  .cyber-button-outline {
+    @apply border border-cyber-blue text-cyber-blue hover:bg-cyber-blue/10;
+  }
+  
+  .neon-text-blue {
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+  }
+  .neon-text-purple {
+    text-shadow: 0 0 10px rgba(112, 0, 255, 0.5);
+  }
+  
+  .hologram-border {
+    @apply border-2 border-cyber-blue/50 relative overflow-hidden;
+  }
+  .hologram-border::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background: linear-gradient(rgba(0, 242, 255, 0.05) 50%, transparent 50%);
+    background-size: 100% 4px;
+  }
+
+  .glass-morphism {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .shung-animation {
+    @apply transition-transform duration-200 active:scale-95;
+  }
+}
+
+/* Custom scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: #7000FF;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00F2FF;
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.scanline {
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 242, 255, 0.2);
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+}

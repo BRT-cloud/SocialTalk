@@ -1,0 +1,8 @@
+{
+  "name": "SocialTalk: 국어 & 사회성 향상 게임",
+  "description": "중학생을 위한 국어 화법 및 사회성 향상 게이미피케이션 학습 플랫폼",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

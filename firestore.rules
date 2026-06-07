@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model (Nickname-based Login)
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {nickname}
+    // Fields:
+    //   - uid: string (nickname)
+    //   - displayName: string (nickname)
+    //   - exp: number
+    //   - level: number
+    //   - wisdom: number
+    //   - badges: list
+    //   - role: 'student' | 'admin'
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAdmin(nickname) {
+      return nickname == 'admin' || nickname == 'GM' || 
+             (exists(/databases/$(database)/documents/users/$(nickname)) && 
+              get(/databases/$(database)/documents/users/$(nickname)).data.role == 'admin');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'exp', 'level', 'wisdom']) &&
+             data.uid is string &&
+             data.exp is number &&
+             data.level is number &&
+             data.wisdom is number;
+    }
+
+    // Rules
+    // NOTE: In this simple nickname-based login, we allow access based on the nickname.
+    // This is a prototype and should be hardened with real Auth for production.
+
+    match /users/{nickname} {
+      allow read: if true;
+      allow write: if isValidUser(request.resource.data) && request.resource.data.uid == nickname;
+    }
+
+    match /scenarios/{scenarioId} {
+      allow read: if true;
+      allow write: if true; // Allow for prototype, should be restricted to admin
+    }
+
+    match /attempts/{attemptId} {
+      allow read, create: if true;
+      allow update, delete: if true;
+    }
+
+    match /user_missions/{missionId} {
+      allow read, write: if true;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
