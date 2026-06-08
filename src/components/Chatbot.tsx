@@ -100,8 +100,8 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
       colors: ['#00F2FF', '#7000FF', '#ffffff']
     });
 
-    const currentIndex = scenarios.findIndex(s => s.id === scenario.id);
-    const nextScenario = scenarios[currentIndex + 1];
+    const currentStageNum = Number(scenario.stage);
+    const nextScenario = scenarios.find(s => Number(s.stage) === currentStageNum + 1);
 
     setTimeout(() => {
       setShowSuccessOverlay(false);
@@ -235,8 +235,8 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
             newBadges.push(badgeId);
           }
           
-          const currentIndex = scenarios.findIndex(s => s.id === scenario.id);
-          const nextScenario = scenarios[currentIndex + 1];
+          const currentStageNum = Number(scenario.stage);
+          const nextScenario = scenarios.find(s => Number(s.stage) === currentStageNum + 1);
           if (nextScenario && !newUnlockedStages.includes(nextScenario.id)) {
             newUnlockedStages.push(nextScenario.id);
           }
@@ -283,8 +283,8 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
               updates.clearedStages = arrayUnion(scenario.id);
               updates.badges = arrayUnion(`competence-${scenario.id}`);
               
-              const currentIndex = scenarios.findIndex(s => s.id === scenario.id);
-              const nextScenario = scenarios[currentIndex + 1];
+              const currentStageNum = Number(scenario.stage);
+              const nextScenario = scenarios.find(s => Number(s.stage) === currentStageNum + 1);
               if (nextScenario) {
                 updates.unlockedStages = arrayUnion(nextScenario.id);
               }
@@ -358,8 +358,8 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
     
     setShowSchoolping(false);
     
-    const currentIndex = scenarios.findIndex(s => s.id === scenario.id);
-    const nextScenario = scenarios[currentIndex + 1];
+    const currentStageNum = Number(scenario.stage);
+    const nextScenario = scenarios.find(s => Number(s.stage) === currentStageNum + 1);
     
     if (nextScenario && nextScenario.world !== scenario.world) {
       setShowWorldClearOverlay(true);
@@ -814,7 +814,7 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
                   )}
 
                   {/* Next Button */}
-                  {isAnswered && (isCorrect || currentQuest.type !== 'long-answer') && (
+                  {isAnswered && isCorrect && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mt-10">
                       <button 
                         onClick={handleNextQuest}

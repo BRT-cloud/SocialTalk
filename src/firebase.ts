@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, getDocFromServer } from 'firebase/firestore';
+import { getFirestore, disableNetwork, doc, getDoc, setDoc, collection, query, where, getDocs, onSnapshot, addDoc, serverTimestamp, getDocFromServer } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
 
 const isConfigured = 
@@ -29,6 +29,10 @@ try {
     : undefined;
   db = getFirestore(app, dbId);
   auth = getAuth(app);
+  
+  if (!isConfigured) {
+    disableNetwork(db).catch(console.error);
+  }
 } catch (e) {
   console.warn("Firebase initialization failed with current config. Setting up dummy fallback app:", e);
   const fallbackConfig = {
@@ -40,6 +44,7 @@ try {
     app = initializeApp(fallbackConfig);
     db = getFirestore(app);
     auth = getAuth(app);
+    disableNetwork(db).catch(console.error);
   } catch (err) {
     console.error("Critical: Could not initialize even fallback app:", err);
   }
@@ -48,18 +53,7 @@ try {
 export { db, auth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged };
 export type { User };
 
-// Connection test
-async function testConnection() {
-  try {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
-    }
-  }
-}
-testConnection();
-
+// Connection test was removed.
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot, updateDoc, collection } from 'firebase/firestore';
 import { UserProfile, Scenario } from './types';
-import { INITIAL_SCENARIOS } from './constants';
+import { INITIAL_SCENARIOS, DEFAULT_UNLOCKED_STAGE_COUNT } from './constants';
 import WorldMap from './components/WorldMap';
 import Chatbot from './components/Chatbot';
 import Dashboard from './components/Dashboard';
@@ -52,7 +52,7 @@ export default function App() {
         role: isAdmin ? 'admin' : 'student',
         stats: { cognitive: 0, emotional: 0, behavioral: 0 },
         clearedWorlds: [],
-        unlockedStages: isAdmin ? allStageIds : ['stage-1'],
+        unlockedStages: isAdmin ? allStageIds : Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`),
         clearedStages: isAdmin ? allStageIds : [],
         competenceIndex: 0,
         schoolpingCompleted: [],
@@ -94,7 +94,16 @@ export default function App() {
             // We merge the unlocked/cleared stages, choosing whichever has MORE progress!
             const cloudUnlocked = data.unlockedStages || [];
             const localUnlocked = savedLocalProfile?.unlockedStages || [];
-            const mergedUnlocked = Array.from(new Set(['stage-1', ...cloudUnlocked, ...localUnlocked]));
+            const defaultStages = Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`);
+            const mergedUnlocked = Array.from(new Set([...defaultStages, ...cloudUnlocked, ...localUnlocked]));
+
+            // Check if Firestore DB needs an update to make sure all default stages are unlocked
+            const hasAllDefaultStages = defaultStages.every(id => cloudUnlocked.includes(id));
+            if (!hasAllDefaultStages) {
+              updateDoc(docRef, {
+                unlockedStages: mergedUnlocked
+              }).catch(e => console.error("Failed to sync default unlocked stages to Firestore", e));
+            }
 
             const cloudCleared = data.clearedStages || [];
             const localCleared = savedLocalProfile?.clearedStages || [];
@@ -155,7 +164,7 @@ export default function App() {
         setProfile(finalProfile);
         return true;
       } catch (error) {
-        console.warn("Firestore error in loadProfile, loading fallback from local storage:", error);
+        console.log("Firestore offline mode active: loading fallback from local storage");
         const saved = localStorage.getItem(`socialtalk_profile_${name}`);
         if (saved) {
           try {
@@ -186,7 +195,7 @@ export default function App() {
         role: isAdmin ? 'admin' : 'student',
         stats: { cognitive: 0, emotional: 0, behavioral: 0 },
         clearedWorlds: [],
-        unlockedStages: isAdmin ? allStageIds : ['stage-1'],
+        unlockedStages: isAdmin ? allStageIds : Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`),
         clearedStages: isAdmin ? allStageIds : [],
         competenceIndex: 0,
         schoolpingCompleted: [],
@@ -249,8 +258,9 @@ export default function App() {
             if (!prev) return data;
             
             // Merge arrays to take union of unlocked and cleared stages (avoiding downgrades if local is newer)
+            const defaultStages = Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`);
             const mergedUnlocked = Array.from(new Set([
-              'stage-1',
+              ...defaultStages,
               ...(data.unlockedStages || []),
               ...(prev.unlockedStages || [])
             ]));
@@ -492,8 +502,13 @@ export default function App() {
 
   const handleNextStage = (currentScenarioId: string) => {
     playSound('WHOOSH');
-    const currentIndex = scenarios.findIndex(s => s.id === currentScenarioId);
-    const nextScenario = scenarios[currentIndex + 1];
+    const currentStageObj = scenarios.find(s => s.id === currentScenarioId);
+    if (!currentStageObj) {
+      setView('map');
+      return;
+    }
+    const currentStageNum = Number(currentStageObj.stage);
+    const nextScenario = scenarios.find(s => Number(s.stage) === currentStageNum + 1);
     
     if (nextScenario) {
       setSelectedScenario(nextScenario);
