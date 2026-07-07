@@ -363,17 +363,32 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
   };
 
   const handleSchoolpingComplete = async () => {
-    try {
-      if (profile?.uid) {
-        const userRef = doc(db, 'users', profile.uid);
-        await updateDoc(userRef, {
-          schoolpingCompleted: arrayUnion(scenario.id)
-        });
+    if (profile?.uid) {
+      // 1. Firestore 원격 저장은 백그라운드 비동기 위임하여 메인 스레드 락 방지
+      const userRef = doc(db, 'users', profile.uid);
+      updateDoc(userRef, {
+        schoolpingCompleted: arrayUnion(scenario.id)
+      }).catch((error) => {
+        console.error('Error saving schoolping completion:', error);
+      });
+
+      // 2. 로컬 스토리지에 즉시 업데이트하여 오프라인에서도 진행 상황 유지
+      try {
+        const savedRaw = localStorage.getItem(`socialtalk_profile_${profile.uid}`);
+        if (savedRaw) {
+          const localProfile = JSON.parse(savedRaw);
+          const currentSchoolping = localProfile.schoolpingCompleted || [];
+          if (!currentSchoolping.includes(scenario.id)) {
+            localProfile.schoolpingCompleted = [...currentSchoolping, scenario.id];
+            localStorage.setItem(`socialtalk_profile_${profile.uid}`, JSON.stringify(localProfile));
+          }
+        }
+      } catch (localError) {
+        console.warn("Failed to save schoolping locally:", localError);
       }
-    } catch (error) {
-      console.error('Error saving schoolping completion:', error);
     }
     
+    // 3. 지연 없이 즉시 모달 오버레이 제거 및 다음 단계 진행
     setShowSchoolping(false);
     
     const currentStageNum = Number(scenario.stage);
