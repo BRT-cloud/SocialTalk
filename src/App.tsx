@@ -130,6 +130,11 @@ export default function App() {
               clearedStages: mergedCleared,
               badges: mergedBadges,
               clearedWorlds: mergedClearedWorlds,
+              stats: {
+                cognitive: Math.max(data.stats?.cognitive || 0, savedLocalProfile?.stats?.cognitive || 0),
+                emotional: Math.max(data.stats?.emotional || 0, savedLocalProfile?.stats?.emotional || 0),
+                behavioral: Math.max(data.stats?.behavioral || 0, savedLocalProfile?.stats?.behavioral || 0),
+              },
               inventory: { 
                 magnifier: Math.max(data.inventory?.magnifier || 0, savedLocalProfile?.inventory?.magnifier || 0),
                 mirror: Math.max(data.inventory?.mirror || 0, savedLocalProfile?.inventory?.mirror || 0),
@@ -291,6 +296,11 @@ export default function App() {
               level: Math.max(data.level || 1, prev.level || 1),
               wisdom: Math.max(data.wisdom || 0, prev.wisdom || 0),
               competenceIndex: Math.max(data.competenceIndex || 0, prev.competenceIndex || 0),
+              stats: {
+                cognitive: Math.max(data.stats?.cognitive || 0, prev.stats?.cognitive || 0),
+                emotional: Math.max(data.stats?.emotional || 0, prev.stats?.emotional || 0),
+                behavioral: Math.max(data.stats?.behavioral || 0, prev.stats?.behavioral || 0),
+              },
               inventory: {
                 magnifier: Math.max(data.inventory?.magnifier || 0, prev.inventory?.magnifier || 0),
                 mirror: Math.max(data.inventory?.mirror || 0, prev.inventory?.mirror || 0),
