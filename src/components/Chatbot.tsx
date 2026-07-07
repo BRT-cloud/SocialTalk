@@ -185,7 +185,6 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
   };
 
   const saveAttempt = async (quest: Quest, userInput: string, correct: boolean) => {
-    let dbConnected = true;
     try {
       const attemptData: Attempt = {
         uid: profile?.uid || '',
@@ -196,12 +195,10 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
         timestamp: new Date() as any // fallback-friendly timestamp
       };
 
-      try {
-        await addDoc(collection(db, 'attempts'), attemptData);
-      } catch (dbError) {
+      // 1. attempts 컬렉션 데이터베이스 로깅은 백그라운드에서 비동기로 실행하여 로컬 상태 업데이트의 지연을 막습니다.
+      addDoc(collection(db, 'attempts'), attemptData).catch((dbError) => {
         console.warn("Firestore attempts log skipped (offline mode active):", dbError);
-        dbConnected = false;
-      }
+      });
 
       if (correct) {
         setShowExpAnimation(true);
@@ -214,12 +211,46 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
         setTimeout(() => setShowExpAnimation(false), 2000);
         
         const competenceEarned = quest.type === 'long-answer' ? 10 : 5;
+        const isFirstClear = isLastQuest && !profile?.clearedStages?.includes(scenario.id);
+        
+        let bonusExp = 0;
+        let bonusWisdom = 0;
+        let bonusComp = 0;
+        let statsChange = { cognitive: 0, emotional: 0, behavioral: 0 };
+        
+        if (isFirstClear) {
+          // 최초 스테이지 완료 보상 가산
+          bonusExp = 50;
+          bonusWisdom = 25;
+          bonusComp = 15;
+          
+          let statIncrease = 10;
+          if (scenario.difficulty === 'medium') statIncrease = 15;
+          if (scenario.difficulty === 'hard') statIncrease = 20;
+          
+          if (scenario.world === 'forest') {
+            statsChange.emotional = statIncrease;
+          } else if (scenario.world === 'sea') {
+            statsChange.cognitive = statIncrease;
+          } else if (scenario.world === 'city') {
+            statsChange.behavioral = statIncrease;
+          } else if (scenario.world === 'castle') {
+            const share = Math.ceil(statIncrease / 2);
+            statsChange.cognitive = share;
+            statsChange.emotional = share;
+            statsChange.behavioral = share;
+          }
+        }
 
-        // Calculate state updates beforehand to guarantee offline execution sync
-        const currentExp = (profile?.exp || 0) + 10;
+        const currentExp = (profile?.exp || 0) + 10 + bonusExp;
         const currentLevel = Math.floor(currentExp / 100) + 1;
-        const currentWisdom = (profile?.wisdom || 0) + 5;
-        const currentComp = (profile?.competenceIndex || 0) + competenceEarned;
+        const currentWisdom = (profile?.wisdom || 0) + 5 + bonusWisdom;
+        const currentComp = (profile?.competenceIndex || 0) + competenceEarned + bonusComp;
+        const currentStats = {
+          cognitive: (profile?.stats?.cognitive || 0) + statsChange.cognitive,
+          emotional: (profile?.stats?.emotional || 0) + statsChange.emotional,
+          behavioral: (profile?.stats?.behavioral || 0) + statsChange.behavioral,
+        };
         
         let newClearedStages = profile ? [...(profile.clearedStages || [])] : [];
         let newUnlockedStages = profile ? [...(profile.unlockedStages || ['stage-1'])] : ['stage-1'];
@@ -253,52 +284,39 @@ export default function Chatbot({ scenario, onBack, onNextStage, profile, scenar
           level: currentLevel,
           wisdom: currentWisdom,
           competenceIndex: currentComp,
+          stats: currentStats,
           clearedStages: newClearedStages,
           unlockedStages: newUnlockedStages,
           badges: newBadges,
           clearedWorlds: newClearedWorlds
         };
 
-        // 1. Immediately store updated state locally so next-stage transition succeeds flawlessly offline
+        // 2. 즉시 로컬 상태와 스토리지를 업데이트하여 지연 없이 수치가 표기되도록 합니다.
         if (profile?.uid) {
           localStorage.setItem(`socialtalk_profile_${profile.uid}`, JSON.stringify(updatedProfile));
         }
 
-        // 2. Immediately update the parent React state so UI updates in real-time
         if (onUpdateProfile) {
           onUpdateProfile(updatedProfile);
         }
 
-        // 3. Synchronize to Firestore remote database if connected
-        if (dbConnected) {
-          try {
-            const userRef = doc(db, 'users', profile?.uid || '');
-            const updates: any = {
-              exp: increment(10),
-              competenceIndex: increment(competenceEarned),
-              wisdom: increment(5)
-            };
-
-            if (isLastQuest) {
-              updates.clearedStages = arrayUnion(scenario.id);
-              updates.badges = arrayUnion(`competence-${scenario.id}`);
-              
-              const currentStageNum = Number(scenario.stage);
-              const nextScenario = scenarios.find(s => Number(s.stage) === currentStageNum + 1);
-              if (nextScenario) {
-                updates.unlockedStages = arrayUnion(nextScenario.id);
-              }
-              
-              if (scenario.isBoss && !profile?.clearedWorlds?.includes(scenario.world)) {
-                updates.clearedWorlds = arrayUnion(scenario.world);
-                updates.badges = arrayUnion(`${scenario.world}-master`);
-              }
-            }
-            await updateDoc(userRef, updates);
-          } catch (error) {
-            console.warn("Firestore sync update failed, progression safely stored offline:", error);
-          }
-        }
+        // 3. Firestore 원격 동기화 요청 역시 백그라운드 비동기로 위임하여 사용자 락을 방지합니다.
+        const userRef = doc(db, 'users', profile?.uid || '');
+        const updates: any = {
+          exp: currentExp,
+          level: currentLevel,
+          wisdom: currentWisdom,
+          competenceIndex: currentComp,
+          stats: currentStats,
+          clearedStages: newClearedStages,
+          unlockedStages: newUnlockedStages,
+          badges: newBadges,
+          clearedWorlds: newClearedWorlds
+        };
+        
+        updateDoc(userRef, updates).catch((error) => {
+          console.warn("Firestore sync update failed, progression safely stored offline:", error);
+        });
       }
     } catch (error) {
       console.error("Critical error in saveAttempt safety wrap:", error);

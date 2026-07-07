@@ -120,6 +120,77 @@ export default function Dashboard({ profile }: DashboardProps) {
               </div>
             </div>
           </div>
+
+          {/* 사회성 역량 스탯 카드 */}
+          <div className="bg-[#0a0a0a] rounded-[2.5rem] p-8 shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+            
+            <h3 className="text-xl font-black text-white mb-6 tracking-tight flex items-center gap-3">
+              <div className="w-8 h-8 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400 border border-purple-500/20">
+                <Brain size={16} />
+              </div>
+              소통 역량 분석
+            </h3>
+            
+            <div className="space-y-6">
+              {/* 인지적 영역 */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Brain size={14} className="text-[#00F2FF]" />
+                    <span className="text-xs font-black text-slate-300">인지적 영역 (상황 이해)</span>
+                  </div>
+                  <span className="text-xs font-mono font-black text-[#00F2FF]">{profile?.stats?.cognitive || 0} pt</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed">예절 인지, 비언어 신호 파악, 대화 맥락 분석</p>
+                <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(profile?.stats?.cognitive || 0, 100)}%` }}
+                    className="h-full bg-gradient-to-r from-[#00F2FF] to-blue-500 rounded-full shadow-[0_0_10px_rgba(0,242,255,0.4)]"
+                  />
+                </div>
+              </div>
+
+              {/* 정서적 영역 */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Heart size={14} className="text-[#FF2A85]" />
+                    <span className="text-xs font-black text-slate-300">정서적 영역 (공감 소통)</span>
+                  </div>
+                  <span className="text-xs font-mono font-black text-[#FF2A85]">{profile?.stats?.emotional || 0} pt</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed">공감 경청, 정서 표현 및 조절, 자존감 회복</p>
+                <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(profile?.stats?.emotional || 0, 100)}%` }}
+                    className="h-full bg-gradient-to-r from-[#FF2A85] to-pink-500 rounded-full shadow-[0_0_10px_rgba(255,42,133,0.4)]"
+                  />
+                </div>
+              </div>
+
+              {/* 행동적 영역 */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} className="text-amber-400" />
+                    <span className="text-xs font-black text-slate-300">행동적 영역 (관계 수행)</span>
+                  </div>
+                  <span className="text-xs font-mono font-black text-amber-400">{profile?.stats?.behavioral || 0} pt</span>
+                </div>
+                <p className="text-[10px] text-slate-500 leading-relaxed">대화 시작, 협동 참여, 갈등 및 거절 대처</p>
+                <div className="w-full bg-white/5 h-2.5 rounded-full overflow-hidden border border-white/5 p-[1px]">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${Math.min(profile?.stats?.behavioral || 0, 100)}%` }}
+                    className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.4)]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Right Column: Quests & History */}
