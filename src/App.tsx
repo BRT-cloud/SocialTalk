@@ -34,7 +34,7 @@ export default function App() {
   // Load profile from Firestore (with LocalStorage offline backup)
   const loadProfile = async (name: string) => {
     const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('TIMEOUT')), 2000)
+      setTimeout(() => reject(new Error('TIMEOUT')), 10000)
     );
 
     const loadTask = async () => {
@@ -168,8 +168,9 @@ export default function App() {
         localStorage.setItem(`socialtalk_profile_${name}`, JSON.stringify(finalProfile));
         setProfile(finalProfile);
         return true;
-      } catch (error) {
-        console.log("Firestore offline mode active: loading fallback from local storage");
+      } catch (error: any) {
+        console.error("Firestore loading error:", error);
+        setAuthError(`DB 연결 에러: ${error?.message || String(error)}`);
         const saved = localStorage.getItem(`socialtalk_profile_${name}`);
         if (saved) {
           try {
@@ -331,7 +332,7 @@ export default function App() {
     setAuthError(null);
     playSound('WHOOSH');
 
-    // Forced entry timeout: if loading takes more than 2 seconds, force entry
+    // Forced entry timeout: if loading takes more than 10 seconds, force entry
     const forcedEntryTimeout = setTimeout(() => {
       if (isSigningInRef.current) {
         // console.warn("Forced entry triggered due to timeout");
@@ -340,7 +341,7 @@ export default function App() {
         setIsSigningIn(false);
         isSigningInRef.current = false;
       }
-    }, 2000);
+    }, 10000);
 
     try {
       const success = await loadProfile(loginNickname);

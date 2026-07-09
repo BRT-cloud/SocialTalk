@@ -3955,7 +3955,7 @@ const generateScenarios = (): Scenario[] => {
     else if (raw.id > 60 && raw.id <= 85) world = 'city';
     else if (raw.id > 85) world = 'castle';
 
-    const isBoss = raw.id % 10 === 0;
+    const isBoss = false;
     const seedPrefix = { forest: 'school', sea: 'home', city: 'city', castle: 'mind' }[world];
     const imageUrl = `https://picsum.photos/seed/${seedPrefix}${raw.id}/800/600`;
 

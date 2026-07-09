@@ -5,7 +5,6 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 const isConfigured = 
   import.meta.env.VITE_FIREBASE_API_KEY && 
   import.meta.env.VITE_FIREBASE_API_KEY !== "your_api_key" && 
-  import.meta.env.VITE_FIREBASE_API_KEY !== "gen-lang-client-0984681318" && 
   import.meta.env.VITE_FIREBASE_API_KEY !== "";
 
 const firebaseConfig = {
