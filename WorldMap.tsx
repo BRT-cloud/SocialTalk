@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { WORLDS } from '../constants';
+import { WORLDS, DEFAULT_UNLOCKED_STAGE_COUNT } from '../constants';
 import { UserProfile, Scenario } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, Star, Trophy, Map as MapIcon, ChevronRight, Sparkles, Sword, CheckCircle2, Flag, PartyPopper } from 'lucide-react';
@@ -27,8 +27,8 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
   const [transitioningWorld, setTransitioningWorld] = useState<string | null>(null);
 
   const isStageUnlocked = (scenario: Scenario) => {
-    if (!profile) return false;
-    return profile.unlockedStages?.includes(scenario.id) || scenario.id === 'stage-1';
+    if (!profile) return scenario.stage <= DEFAULT_UNLOCKED_STAGE_COUNT;
+    return profile.unlockedStages?.includes(scenario.id) || scenario.stage <= DEFAULT_UNLOCKED_STAGE_COUNT;
   };
 
   const isStageCleared = (scenarioId: string) => {
@@ -56,7 +56,10 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
   const [displayWorldId, setDisplayWorldId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile) {
+      setDisplayWorldId('all');
+      return;
+    }
 
     if (scenarios.length > 0) {
       const allUnlocked = profile.unlockedStages.length >= scenarios.length;
