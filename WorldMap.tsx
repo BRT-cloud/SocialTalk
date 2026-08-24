@@ -173,24 +173,7 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
     }
   }, []);
 
-  const visibleWorlds = useMemo(() => {
-    if (displayWorldId === 'all') return WORLDS;
-    if (!profile) return WORLDS.filter(w => w.id === displayWorldId);
-
-    // 프로필의 unlockedStages에 속하는 스테이지가 포함된 월드들을 모두 표시
-    const unlockedWorldIds = new Set<string>();
-    scenarios.forEach(s => {
-      if (profile.unlockedStages?.includes(s.id) || s.id === 'stage-1') {
-        unlockedWorldIds.add(s.world);
-      }
-    });
-
-    if (unlockedWorldIds.size > 1) {
-      return WORLDS.filter(w => unlockedWorldIds.has(w.id));
-    }
-
-    return WORLDS.filter(w => w.id === displayWorldId);
-  }, [displayWorldId, profile, scenarios]);
+  const visibleWorlds = WORLDS;
 
   return (
     <div className="h-full flex flex-col bg-[#050505] overflow-hidden relative font-sans">
@@ -282,7 +265,7 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
             <div className="flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-cyber-blue animate-pulse" />
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                {displayWorldId === 'all' ? '전체 섹터 개방됨' : `${WORLDS.find(w => w.id === displayWorldId)?.name} 탐험 중`}
+                전체 섹터 탐험 가능
               </p>
             </div>
           </div>
