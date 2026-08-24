@@ -357,10 +357,10 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
                           relative w-[75vw] sm:w-72 md:w-80 h-[55vh] min-h-[320px] max-h-[448px] rounded-[2rem] md:rounded-[2.5rem] border-4 overflow-hidden transition-all duration-500 group
                           ${unlocked 
                             ? cleared
-                              ? 'border-emerald-500/50 opacity-80 grayscale-[0.3]'
+                              ? 'border-emerald-500/50 opacity-80 cursor-pointer'
                               : isCurrent
-                                ? 'border-cyber-blue shadow-[0_0_60px_rgba(0,242,255,0.8)]'
-                                : 'border-white/10 hover:border-white/40'
+                                ? 'border-cyber-blue shadow-[0_0_60px_rgba(0,242,255,0.8)] cursor-pointer'
+                                : 'border-cyber-blue/40 hover:border-cyber-blue hover:shadow-[0_0_30px_rgba(0,242,255,0.4)] cursor-pointer'
                             : 'border-white/5 opacity-30 grayscale pointer-events-none'
                           }
                           ${isCurrent ? 'ring-[8px] md:ring-[12px] ring-cyber-blue/20' : ''}
@@ -393,8 +393,8 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
                               <div className="w-10 h-10 md:w-12 md:h-12 bg-black/60 rounded-full flex items-center justify-center border-2 border-white/10">
                                 <Lock size={20} className="text-slate-500" />
                               </div>
-                            ) : isCurrent && (
-                              <div className="w-10 h-10 md:w-12 md:h-12 bg-cyber-blue rounded-full flex items-center justify-center shadow-[0_0_40px_#00F2FF] animate-pulse">
+                            ) : (
+                              <div className={`w-10 h-10 md:w-12 md:h-12 bg-cyber-blue rounded-full flex items-center justify-center shadow-[0_0_40px_#00F2FF] ${isCurrent ? 'animate-pulse' : 'opacity-80'}`}>
                                 <Sparkles size={20} className="text-black" />
                               </div>
                             )}
