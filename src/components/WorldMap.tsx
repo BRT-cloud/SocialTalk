@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import { WORLDS } from '../constants';
+import { WORLDS, DEFAULT_UNLOCKED_STAGE_COUNT } from '../constants';
 import { UserProfile, Scenario } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, Star, Trophy, Map as MapIcon, ChevronRight, Sparkles, Sword, CheckCircle2, Flag, PartyPopper } from 'lucide-react';
@@ -27,8 +27,8 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
   const [transitioningWorld, setTransitioningWorld] = useState<string | null>(null);
 
   const isStageUnlocked = (scenario: Scenario) => {
-    if (!profile) return false;
-    return profile.unlockedStages?.includes(scenario.id) || scenario.id === 'stage-1';
+    if (!profile) return scenario.stage <= DEFAULT_UNLOCKED_STAGE_COUNT;
+    return profile.unlockedStages?.includes(scenario.id) || scenario.stage <= DEFAULT_UNLOCKED_STAGE_COUNT;
   };
 
   const isStageCleared = (scenarioId: string) => {
@@ -56,11 +56,16 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
   const [displayWorldId, setDisplayWorldId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile) {
+      setDisplayWorldId('all');
+      return;
+    }
 
     if (scenarios.length > 0) {
       const allUnlocked = profile.unlockedStages.length >= scenarios.length;
-      if (allUnlocked || currentWorldId === 'all') {
+      if (allUnlocked || currentWorldId === 'all' || profile.unlockedStages.length > 1) {
+        // 해금된 스테이지가 기본 1개를 넘어 여러 월드에 걸쳐 있는 경우 (예: 40스테이지 이상 해금)
+        // 해금된 모든 월드를 볼 수 있도록 'all' 모드로 설정
         setDisplayWorldId('all');
         return;
       }
@@ -168,7 +173,7 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
     }
   }, []);
 
-  const visibleWorlds = displayWorldId === 'all' ? WORLDS : WORLDS.filter(w => w.id === displayWorldId);
+  const visibleWorlds = WORLDS;
 
   return (
     <div className="h-full flex flex-col bg-[#050505] overflow-hidden relative font-sans">
@@ -260,7 +265,7 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
             <div className="flex items-center gap-2 mt-1">
               <div className="w-2 h-2 rounded-full bg-cyber-blue animate-pulse" />
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
-                {displayWorldId === 'all' ? '전체 섹터 개방됨' : `${WORLDS.find(w => w.id === displayWorldId)?.name} 탐험 중`}
+                전체 섹터 탐험 가능
               </p>
             </div>
           </div>
@@ -313,7 +318,7 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
               {/* Stages Row */}
               <div className="flex items-center gap-8 md:gap-16">
                 {worldScenarios.map((scenario) => {
-                  const unlocked = isStageUnlocked(scenario);
+                  const unlocked = scenario.stage <= 40 || isStageUnlocked(scenario);
                   const cleared = isStageCleared(scenario.id);
                   const isCurrent = scenario.id === currentStageId;
                   
@@ -329,17 +334,16 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
                       className="relative flex-shrink-0 py-4"
                     >
                       <button
-                        onClick={() => unlocked && handleScenarioClick(scenario)}
-                        disabled={!unlocked}
+                        onClick={() => handleScenarioClick(scenario)}
                         className={`
-                          relative w-[75vw] sm:w-72 md:w-80 h-[55vh] min-h-[320px] max-h-[448px] rounded-[2rem] md:rounded-[2.5rem] border-4 overflow-hidden transition-all duration-500 group
+                          relative w-[75vw] sm:w-72 md:w-80 h-[55vh] min-h-[320px] max-h-[448px] rounded-[2rem] md:rounded-[2.5rem] border-4 overflow-hidden transition-all duration-500 group cursor-pointer
                           ${unlocked 
                             ? cleared
-                              ? 'border-emerald-500/50 opacity-80 grayscale-[0.3]'
+                              ? 'border-emerald-500/50 opacity-90'
                               : isCurrent
                                 ? 'border-cyber-blue shadow-[0_0_60px_rgba(0,242,255,0.8)]'
-                                : 'border-white/10 hover:border-white/40'
-                            : 'border-white/5 opacity-30 grayscale pointer-events-none'
+                                : 'border-cyber-blue/60 hover:border-cyber-blue hover:shadow-[0_0_30px_rgba(0,242,255,0.4)]'
+                            : 'border-white/10 opacity-40 hover:opacity-100'
                           }
                           ${isCurrent ? 'ring-[8px] md:ring-[12px] ring-cyber-blue/20' : ''}
                         `}
@@ -371,8 +375,8 @@ export default function WorldMap({ onSelectScenario, profile, scenarios }: World
                               <div className="w-10 h-10 md:w-12 md:h-12 bg-black/60 rounded-full flex items-center justify-center border-2 border-white/10">
                                 <Lock size={20} className="text-slate-500" />
                               </div>
-                            ) : isCurrent && (
-                              <div className="w-10 h-10 md:w-12 md:h-12 bg-cyber-blue rounded-full flex items-center justify-center shadow-[0_0_40px_#00F2FF] animate-pulse">
+                            ) : (
+                              <div className={`w-10 h-10 md:w-12 md:h-12 bg-cyber-blue rounded-full flex items-center justify-center shadow-[0_0_40px_#00F2FF] ${isCurrent ? 'animate-pulse' : 'opacity-80'}`}>
                                 <Sparkles size={20} className="text-black" />
                               </div>
                             )}
