@@ -1,20 +1,11 @@
-const CACHE_NAME = 'socialtalk-cache-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+const CACHE_NAME = 'socialtalk-cache-v2';
 
 // Install Event
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
+  self.skipWaiting();
 });
 
-// Activate Event
+// Activate Event - Clear all old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -25,42 +16,38 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Fetch Event
+// Fetch Event - Network first for HTML to avoid stale chunk errors
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests
   if (event.request.method !== 'GET') return;
 
-  // Do not cache API requests or Firebase calls
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.includes('/api/')) return;
 
+  // For HTML navigations, always fetch from network first so new deployment chunks load
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.html')) {
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request).then((response) => {
-        // Check if we received a valid response
+    fetch(event.request)
+      .then((response) => {
         if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-
-        // Clone the response
         const responseToCache = response.clone();
-
         caches.open(CACHE_NAME).then((cache) => {
           cache.put(event.request, responseToCache);
         });
-
         return response;
-      });
-    }).catch(() => {
-        // Fallback for offline if needed
-    })
+      })
+      .catch(() => caches.match(event.request))
   );
 });
