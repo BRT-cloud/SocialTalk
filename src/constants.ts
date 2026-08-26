@@ -3974,7 +3974,7 @@ const generateScenarios = (): Scenario[] => {
   });
 };
 
-export const DEFAULT_UNLOCKED_STAGE_COUNT = 10;
+export const DEFAULT_UNLOCKED_STAGE_COUNT = 40;
 export const INITIAL_SCENARIOS = generateScenarios();
 
 export const getStageData = (id: string): Scenario | undefined => {

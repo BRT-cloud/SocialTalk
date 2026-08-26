@@ -148,7 +148,10 @@ export default function App() {
           const savedRaw = localStorage.getItem(`socialtalk_profile_${name}`);
           if (savedRaw) {
             try {
-              finalProfile = JSON.parse(savedRaw);
+              const parsed = JSON.parse(savedRaw);
+              const defaultStages = Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`);
+              const mergedUnlocked = Array.from(new Set([...defaultStages, ...(parsed.unlockedStages || [])]));
+              finalProfile = { ...parsed, unlockedStages: mergedUnlocked };
               // Save to Firestore to sync
               setDoc(docRef, finalProfile).catch(e => console.error("Failed to sync offline user profile to database", e));
             } catch (_) {
@@ -172,9 +175,14 @@ export default function App() {
         console.error("Firestore loading error:", error);
         setAuthError(`DB 연결 에러: ${error?.message || String(error)}`);
         const saved = localStorage.getItem(`socialtalk_profile_${name}`);
+        const defaultStages = Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`);
         if (saved) {
           try {
-            setProfile(JSON.parse(saved));
+            const parsed = JSON.parse(saved);
+            const mergedUnlocked = Array.from(new Set([...defaultStages, ...(parsed.unlockedStages || [])]));
+            const restoredProfile = { ...parsed, unlockedStages: mergedUnlocked };
+            localStorage.setItem(`socialtalk_profile_${name}`, JSON.stringify(restoredProfile));
+            setProfile(restoredProfile);
             return true;
           } catch (_) {}
         }
@@ -190,6 +198,7 @@ export default function App() {
       console.warn("Profile loading issue (timeout or error), loading offline data for", name);
       const isAdmin = name === 'admin' || name === 'GM' || name === '관리자접속';
       const allStageIds = scenarios.map(s => s.id);
+      const defaultStages = Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`);
       const defaultProfile: UserProfile = {
         uid: name,
         displayName: name,
@@ -201,7 +210,7 @@ export default function App() {
         role: isAdmin ? 'admin' : 'student',
         stats: { cognitive: 0, emotional: 0, behavioral: 0 },
         clearedWorlds: [],
-        unlockedStages: isAdmin ? allStageIds : Array.from({ length: DEFAULT_UNLOCKED_STAGE_COUNT }, (_, i) => `stage-${i + 1}`),
+        unlockedStages: isAdmin ? allStageIds : defaultStages,
         clearedStages: isAdmin ? allStageIds : [],
         competenceIndex: 0,
         schoolpingCompleted: [],
@@ -211,7 +220,11 @@ export default function App() {
       const saved = localStorage.getItem(`socialtalk_profile_${name}`);
       if (saved) {
         try {
-          setProfile(JSON.parse(saved));
+          const parsed = JSON.parse(saved);
+          const mergedUnlocked = Array.from(new Set([...defaultStages, ...(parsed.unlockedStages || [])]));
+          const restoredProfile = { ...parsed, unlockedStages: mergedUnlocked };
+          localStorage.setItem(`socialtalk_profile_${name}`, JSON.stringify(restoredProfile));
+          setProfile(restoredProfile);
           return true;
         } catch (_) {}
       }
